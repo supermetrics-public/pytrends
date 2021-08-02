@@ -423,23 +423,32 @@ class TrendReq(object):
         result_df = pd.DataFrame(req_json)
         return result_df
 
-    def today_searches(self, pn='US'):
+    def today_searches(self, geo='US', sd='', ed=''):
         """Request data from Google Daily Trends section and returns a dataframe"""
-        forms = {'ns': 15, 'geo': pn, 'tz': '-180', 'hl': 'en-US'}
-        req_json = self._get_data(
-            url=TrendReq.TODAY_SEARCHES_URL,
-            method=TrendReq.GET_METHOD,
-            trim_chars=5,
-            params=forms,
-            **self.requests_args
-        )['default']['trendingSearchesDays'][0]['trendingSearches']
-        result_df = pd.DataFrame()
-        # parse the returned json
-        sub_df = pd.DataFrame()
-        for trend in req_json:
-            sub_df = sub_df.append(trend['title'], ignore_index=True)
-        result_df = pd.concat([result_df, sub_df])
-        return result_df.iloc[:, -1]
+        if ed == '':
+            ed = datetime.now().strftime('%Y%m%d')
+        if sd == '':
+            sd = datetime.now().strftime('%Y%m%d')
+
+        result = {}
+        while True:
+            forms = {'ns': 15, 'geo': geo, 'tz': '-180', 'hl': 'en-US', 'ed': ed}
+            req_json = self._get_data(
+                url=TrendReq.TODAY_SEARCHES_URL,
+                method=TrendReq.GET_METHOD,
+                trim_chars=5,
+                params=forms,
+                **self.requests_args
+            )
+
+            result[ed] = req_json['default']['trendingSearchesDays'][0]['trendingSearches']
+
+            if ed <= sd:
+                break
+
+            ed = req_json['default']['endDateForNextRequest']
+
+        return result
 
     def top_charts(self, date, hl='en-US', tz=300, geo='GLOBAL'):
         """Request data from Google's Top Charts section and return a dataframe"""
