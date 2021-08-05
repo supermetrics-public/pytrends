@@ -29,7 +29,7 @@ class TrendReq(object):
     TOP_CHARTS_URL = 'https://trends.google.com/trends/api/topcharts'
     SUGGESTIONS_URL = 'https://trends.google.com/trends/api/autocomplete/'
     CATEGORIES_URL = 'https://trends.google.com/trends/api/explore/pickers/category'
-    TODAY_SEARCHES_URL = 'https://trends.google.com/trends/api/dailytrends'
+    DAILY_TRENDS_URL = 'https://trends.google.com/trends/api/dailytrends'
     ERROR_CODES = (500, 502, 504, 429)
 
     def __init__(self, hl='en-US', tz=360, geo='', timeout=(2, 5), proxies='',
@@ -423,7 +423,7 @@ class TrendReq(object):
         result_df = pd.DataFrame(req_json)
         return result_df
 
-    def today_searches(self, geo='US', sd='', ed=''):
+    def daily_trends(self, geo='US', sd='', ed=''):
         """Request data from Google Daily Trends section and returns a dataframe"""
         if ed == '':
             ed = datetime.now().strftime('%Y%m%d')
@@ -434,7 +434,7 @@ class TrendReq(object):
         while True:
             forms = {'ns': 15, 'geo': geo, 'tz': '-180', 'hl': 'en-US', 'ed': ed}
             req_json = self._get_data(
-                url=TrendReq.TODAY_SEARCHES_URL,
+                url=TrendReq.DAILY_TRENDS_URL,
                 method=TrendReq.GET_METHOD,
                 trim_chars=5,
                 params=forms,
