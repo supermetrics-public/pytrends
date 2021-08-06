@@ -441,7 +441,9 @@ class TrendReq(object):
                 **self.requests_args
             )
 
-            result[ed] = req_json['default']['trendingSearchesDays'][0]['trendingSearches']
+            for i, val in enumerate(req_json['default']['trendingSearchesDays']):
+                ed = val['date']
+                result[ed] = val['trendingSearches']
 
             if ed <= sd:
                 break
