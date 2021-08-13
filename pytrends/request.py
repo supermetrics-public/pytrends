@@ -547,21 +547,7 @@ class TrendReq(object):
             start_date += delta
             date_iterator += delta
 
-            if (date_iterator > end_date):
-                # Run for 7 more days to get remaining data that would have been truncated if we stopped now
-                # This is needed because google requires 7 days yet we may end up with a week result less than a full week
-                start_date_str = start_date.strftime('%Y-%m-%dT%H')
-                date_iterator_str = date_iterator.strftime('%Y-%m-%dT%H')
-
-                tf = start_date_str + ' ' + date_iterator_str
-
-                try:
-                    self.build_payload(keywords, cat, tf, geo, gprop)
-                    week_df = self.interest_over_time()
-                    df = df.append(week_df)
-                except Exception as e:
-                    print(e)
-                    pass
+            if date_iterator <= end_date:
                 break
 
             # just in case you are rate-limited by Google. Recommended is 60 if you are.
