@@ -541,7 +541,7 @@ class TrendReq(object):
                 print(e)
                 pass
 
-            start_date += delta
+            start_date = end_date + timedelta(hours=1)
 
             if start_date >= end_date:
                 break
