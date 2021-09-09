@@ -525,16 +525,13 @@ class TrendReq(object):
 
         df = pd.DataFrame()
 
-        date_iterator = start_date
-        date_iterator += delta
-
         while True:
             # format date to comply with API call
 
             start_date_str = start_date.strftime('%Y-%m-%dT%H')
-            date_iterator_str = date_iterator.strftime('%Y-%m-%dT%H')
+            end_date_str = (start_date + delta).strftime('%Y-%m-%dT%H')
 
-            tf = start_date_str + ' ' + date_iterator_str
+            tf = start_date_str + ' ' + end_date_str
 
             try:
                 self.build_payload(keywords, cat, tf, geo, gprop)
@@ -544,29 +541,14 @@ class TrendReq(object):
                 print(e)
                 pass
 
-            start_date += delta
-            date_iterator += delta
+            start_date += delta + timedelta(hours=1)
 
-            if (date_iterator > end_date):
-                # Run for 7 more days to get remaining data that would have been truncated if we stopped now
-                # This is needed because google requires 7 days yet we may end up with a week result less than a full week
-                start_date_str = start_date.strftime('%Y-%m-%dT%H')
-                date_iterator_str = date_iterator.strftime('%Y-%m-%dT%H')
-
-                tf = start_date_str + ' ' + date_iterator_str
-
-                try:
-                    self.build_payload(keywords, cat, tf, geo, gprop)
-                    week_df = self.interest_over_time()
-                    df = df.append(week_df)
-                except Exception as e:
-                    print(e)
-                    pass
+            if start_date >= end_date:
                 break
 
-            # just in case you are rate-limited by Google. Recommended is 60 if you are.
+            # just in case we are rate-limited by Google. Recommended is 60
             if sleep > 0:
                 time.sleep(sleep)
 
-        # Return the dataframe with results from our timeframe
+        # return the dataframe with results from our timeframe
         return df.loc[initial_start_date:end_date]
