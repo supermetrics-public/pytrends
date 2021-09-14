@@ -308,7 +308,7 @@ class TrendReq(object):
         # split list columns into separate ones, remove brackets and split on comma
         result_df = df['value'].apply(lambda x: pd.Series(
             str(x).replace('[', '').replace(']', '').split(',')))
-        if inc_geo_code:
+        if inc_geo_code and 'geoCode' in df:
             result_df['geoCode'] = df['geoCode']
 
         # rename each column with its search term
