@@ -436,6 +436,8 @@ class TrendReq(object):
             sd = datetime.now().strftime('%Y%m%d')
 
         result = {}
+        current_date = ed
+
         while True:
             forms = {'ns': 15, 'geo': geo, 'tz': '-180', 'hl': 'en-US', 'ed': ed}
             req_json = self._get_data(
@@ -447,13 +449,17 @@ class TrendReq(object):
             )
 
             for i, val in enumerate(req_json['default']['trendingSearchesDays']):
-                ed = val['date']
-                result[ed] = val['trendingSearches']
+                current_date = val['date']
+                if sd <= current_date <= ed:
+                    result[current_date] = val['trendingSearches']
 
-            if ed <= sd:
+            if current_date <= sd:
                 break
 
-            ed = req_json['default']['endDateForNextRequest']
+            if 'endDateForNextRequest' not in req_json['default']:
+                break
+
+            current_date = req_json['default']['endDateForNextRequest']
 
         return result
 
