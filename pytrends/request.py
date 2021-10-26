@@ -1,5 +1,4 @@
 import json
-import sys
 import time
 from datetime import datetime, timedelta
 
@@ -51,15 +50,15 @@ class TrendReq(object):
         self.backoff_factor = backoff_factor
         self.proxy_index = 0
         self.requests_args = requests_args or {}
-        self.cookies = self.GetGoogleCookie()
-        # intialize widget payloads
+        self.cookies = self.get_google_cookie()
+        # initialize widget payloads
         self.token_payload = dict()
         self.interest_over_time_widget = dict()
         self.interest_by_region_widget = dict()
         self.related_topics_widget_list = list()
         self.related_queries_widget_list = list()
 
-    def GetGoogleCookie(self):
+    def get_google_cookie(self):
         """
         Gets google cookie (used for each and every proxy; once on init otherwise)
         Removes proxy from the list on proxy error
@@ -97,7 +96,7 @@ class TrendReq(object):
                         raise
                     continue
 
-    def GetNewProxy(self):
+    def get_new_proxy(self):
         """
         Increment proxy INDEX; zero on overflow
         """
@@ -127,7 +126,7 @@ class TrendReq(object):
 
         s.headers.update({'accept-language': self.hl})
         if len(self.proxies) > 0:
-            self.cookies = self.GetGoogleCookie()
+            self.cookies = self.get_google_cookie()
             s.proxies.update({'https': self.proxies[self.proxy_index]})
         if method == TrendReq.POST_METHOD:
             response = s.post(url, timeout=self.timeout,
@@ -149,7 +148,7 @@ class TrendReq(object):
             # these have to be cleaned before being passed to the json parser
             content = response.text[trim_chars:]
             # parse json
-            self.GetNewProxy()
+            self.get_new_proxy()
             return json.loads(content)
         else:
             # error
@@ -194,7 +193,7 @@ class TrendReq(object):
         # order of the json matters...
         first_region_token = True
         # clear self.related_queries_widget_list and self.related_topics_widget_list
-        # of old keywords'widgets
+        # of old keywords' widgets
         self.related_queries_widget_list[:] = []
         self.related_topics_widget_list[:] = []
         # assign requests
@@ -230,13 +229,13 @@ class TrendReq(object):
         )
 
         df = pd.DataFrame(req_json['default']['timelineData'])
-        if (df.empty):
+        if df.empty:
             return df
 
         df['date'] = pd.to_datetime(df['time'].astype(dtype='float64'),
                                     unit='s')
         df = df.set_index(['date']).sort_index()
-        # split list columns into seperate ones, remove brackets and split on comma
+        # split list columns into separate ones, remove brackets and split on comma
         result_df = df['value'].apply(lambda x: pd.Series(
             str(x).replace('[', '').replace(']', '').split(',')))
         # rename each column with its search term, relying on order that google provides...
@@ -249,7 +248,7 @@ class TrendReq(object):
 
         if 'isPartial' in df:
             # make other dataframe from isPartial key data
-            # split list columns into seperate ones, remove brackets and split on comma
+            # split list columns into separate ones, remove brackets and split on comma
             df = df.fillna(False)
             result_df2 = df['isPartial'].apply(lambda x: pd.Series(
                 str(x).replace('[', '').replace(']', '').split(',')))
@@ -294,7 +293,7 @@ class TrendReq(object):
             params=region_payload,
         )
         df = pd.DataFrame(req_json['default']['geoMapData'])
-        if (df.empty):
+        if df.empty:
             return df
 
         # rename the column with the search keyword
@@ -436,8 +435,10 @@ class TrendReq(object):
             sd = datetime.now().strftime('%Y%m%d')
 
         result = {}
+        current_date = ed
+
         while True:
-            forms = {'ns': 15, 'geo': geo, 'tz': '-180', 'hl': 'en-US', 'ed': ed}
+            forms = {'ns': 15, 'geo': geo, 'tz': '-180', 'hl': 'en-US', 'ed': current_date}
             req_json = self._get_data(
                 url=TrendReq.DAILY_TRENDS_URL,
                 method=TrendReq.GET_METHOD,
@@ -447,13 +448,17 @@ class TrendReq(object):
             )
 
             for i, val in enumerate(req_json['default']['trendingSearchesDays']):
-                ed = val['date']
-                result[ed] = val['trendingSearches']
+                current_date = val['date']
+                if sd <= current_date <= ed:
+                    result[current_date] = val['trendingSearches']
 
-            if ed <= sd:
+            if current_date <= sd:
                 break
 
-            ed = req_json['default']['endDateForNextRequest']
+            if 'endDateForNextRequest' not in req_json['default']:
+                break
+
+            current_date = req_json['default']['endDateForNextRequest']
 
         return result
 
