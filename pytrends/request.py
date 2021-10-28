@@ -561,4 +561,4 @@ class TrendReq(object):
                 time.sleep(sleep)
 
         # return the dataframe with results from our timeframe
-        return df.loc[initial_start_date:end_date]
+        return df
