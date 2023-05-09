@@ -120,8 +120,7 @@ class TrendReq(object):
             retry = Retry(total=self.retries, read=self.retries,
                           connect=self.retries,
                           backoff_factor=self.backoff_factor,
-                          status_forcelist=TrendReq.ERROR_CODES,
-                          method_whitelist=frozenset(['GET', 'POST']))
+                          status_forcelist=TrendReq.ERROR_CODES)
             s.mount('https://', HTTPAdapter(max_retries=retry))
 
         s.headers.update({'accept-language': self.hl})
