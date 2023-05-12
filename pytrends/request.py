@@ -13,6 +13,8 @@ from pytrends import exceptions
 
 from urllib.parse import quote
 
+import gzip
+
 
 class TrendReq(object):
     """
@@ -145,7 +147,11 @@ class TrendReq(object):
             # trim initial characters
             # some responses start with garbage characters, like ")]}',"
             # these have to be cleaned before being passed to the json parser
-            content = response.text[trim_chars:]
+            if response.text:
+                content = response.text[trim_chars:]
+            else:
+                # sometimes Request fails to decode data to the text property. let's do on our own instead
+                content = gzip.decompress(response.raw.data)[trim_chars+1:]
             # parse json
             self.get_new_proxy()
             return json.loads(content)
